@@ -1,0 +1,190 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --paper: #FAFAF7;
+    --paper-alt: #F2F2ED;
+    --ink: #111111;
+    --ink-muted: #525252;
+    --ink-subtle: #6B6B6B;
+    --rule: #BDBDBD;
+    --rule-strong: #111111;
+    --cell-low: #F4F4F0;
+    --cell-mid: #D4D4CE;
+    --cell-high: #525252;
+    --cell-max: #111111;
+  }
+
+  .theme-inverted {
+    --paper: #111111;
+    --paper-alt: #1A1A18;
+    --ink: #F2F2EE;
+    --ink-muted: #C2C2BC;
+    --ink-subtle: #A3A39E;
+    --rule: #4A4A46;
+    --rule-strong: #F2F2EE;
+    --cell-low: #1A1A18;
+    --cell-mid: #3A3A36;
+    --cell-high: #B8B8B0;
+    --cell-max: #F2F2EE;
+  }
+
+  * {
+    border-radius: 0 !important;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    font-size: 18px;
+  }
+
+  body {
+    background-color: var(--paper);
+    color: var(--ink);
+    font-family: "Source Serif 4", Georgia, serif;
+    font-size: 18px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 150ms ease, color 150ms ease;
+  }
+}
+
+.font-display {
+  font-family: "Libre Caslon Text", Georgia, serif;
+}
+
+.font-body {
+  font-family: "Source Serif 4", Georgia, serif;
+}
+
+.font-mono-code {
+  font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.small-caps {
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.12em;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Double horizontal rule below chapter headings */
+.double-rule {
+  border-bottom: 3px double var(--rule-strong);
+}
+
+.double-box {
+  border: 3px double var(--rule-strong);
+}
+
+/* Diagonal hatch pattern for DATA CONTOH banner - strictly black and white */
+.hatch-banner {
+  background-color: #FFFFFF;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    #111111,
+    #111111 2px,
+    #FFFFFF 2px,
+    #FFFFFF 10px
+  );
+  border: 2px solid #111111;
+}
+
+.theme-inverted .hatch-banner {
+  background-color: #111111;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    #F2F2EE,
+    #F2F2EE 2px,
+    #111111 2px,
+    #111111 10px
+  );
+  border: 2px solid #F2F2EE;
+}
+
+/* Grayscale Leaflet tile filter */
+.leaflet-grayscale-tiles .leaflet-tile-pane {
+  filter: grayscale(1) contrast(1.08);
+}
+
+.theme-inverted .leaflet-grayscale-tiles .leaflet-tile-pane {
+  filter: grayscale(1) invert(0.92) contrast(1.08);
+}
+
+.leaflet-container {
+  background-color: var(--paper-alt) !important;
+  font-family: "Source Serif 4", Georgia, serif !important;
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background-color: var(--paper) !important;
+  color: var(--ink) !important;
+  border: 1px solid var(--rule-strong) !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+.leaflet-control-attribution {
+  background-color: var(--paper) !important;
+  color: var(--ink) !important;
+  border-top: 1px solid var(--rule) !important;
+  border-left: 1px solid var(--rule) !important;
+  font-family: "IBM Plex Mono", monospace !important;
+  font-size: 11px !important;
+}
+
+.leaflet-control-attribution a {
+  color: var(--ink) !important;
+  text-decoration: underline !important;
+}
+
+.leaflet-bar a {
+  background-color: var(--paper) !important;
+  color: var(--ink) !important;
+  border-color: var(--rule-strong) !important;
+  border-radius: 0 !important;
+}
+
+/* Monochrome highlight.js theme: weight, italic, and neutral grays only */
+.hljs-mono .hljs-keyword,
+.hljs-mono .hljs-selector-tag,
+.hljs-mono .hljs-built_in,
+.hljs-mono .hljs-title.function_ {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.hljs-mono .hljs-comment,
+.hljs-mono .hljs-quote {
+  font-style: italic;
+  color: var(--ink-subtle);
+}
+
+.hljs-mono .hljs-string,
+.hljs-mono .hljs-number,
+.hljs-mono .hljs-literal {
+  color: var(--ink-muted);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-decoration-color: var(--rule);
+  text-underline-offset: 3px;
+}
+
+.hljs-mono .hljs-params,
+.hljs-mono .hljs-variable,
+.hljs-mono .hljs-title {
+  color: var(--ink);
+}
+
+.fade-150 {
+  transition: opacity 150ms ease, background-color 150ms ease, color 150ms ease;
+}
+
+/* Focus ring strictly visible */
+:focus-visible {
+  outline: 2px solid var(--rule-strong);
+  outline-offset: 2px;
+}
