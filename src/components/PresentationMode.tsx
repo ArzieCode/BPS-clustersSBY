@@ -9,6 +9,7 @@ import {
 import {formatIdNumber, getDynamicInterpretation, toRoman} from '../utils/analytics';
 import {
   ClusterRadarChart,
+  ClusterRegionStackedBarChart,
   DedupComparisonChart,
   FacilityBoxplotChart,
   Log1pHistogramChart,
@@ -113,6 +114,13 @@ export const PRESENTATION_SLIDES: PresentationSlide[] = [
     stageKey: 'profil_klaster',
     insightKey: 'boxplot',
   },
+  {
+    id: 'fig-sebaran-wilayah',
+    nomorVisual: 'Gambar 11',
+    judul: 'Sebaran Klaster per Kabupaten/Kota (Batang Bertumpuk)',
+    stageKey: 'profil_klaster',
+    insightKey: 'sebaran_wilayah',
+  },
 ];
 
 interface PresentationModeProps {
@@ -159,24 +167,33 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
     return () => window.clearInterval(id);
   }, [isOpen, timerRunning]);
 
+  const activeSlides = React.useMemo(
+    () =>
+      PRESENTATION_SLIDES.filter(
+        (s) => s.id !== 'fig-sebaran-wilayah' || analytics.hasKabupatenKota
+      ),
+    [analytics.hasKabupatenKota]
+  );
+
   useEffect(() => {
     if (!isOpen) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         onClose();
       } else if (e.key === 'ArrowRight') {
-        setSlideIdx((s) => Math.min(PRESENTATION_SLIDES.length - 1, s + 1));
+        setSlideIdx((s) => Math.min(activeSlides.length - 1, s + 1));
       } else if (e.key === 'ArrowLeft') {
         setSlideIdx((s) => Math.max(0, s - 1));
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, activeSlides.length]);
 
   if (!isOpen) return null;
 
-  const slide = PRESENTATION_SLIDES[slideIdx] || PRESENTATION_SLIDES[0];
+  const safeIdx = Math.min(slideIdx, Math.max(0, activeSlides.length - 1));
+  const slide = activeSlides[safeIdx] || activeSlides[0];
   const stage = stages[slide.stageKey];
   const dynamicInterp = getDynamicInterpretation(slide.stageKey, analytics, isSampleData);
 
@@ -192,6 +209,8 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
             clusterIds={analytics.clusterIds}
             isInverted={true}
             heightClass="h-[460px]"
+            hasKabupatenKota={analytics.hasKabupatenKota}
+            regionList={analytics.regionList}
           />
         );
       case 'tbl-wrangling':
@@ -293,6 +312,14 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
         return <ClusterRadarChart profiles={analytics.clusterProfiles} isInverted={true} />;
       case 'fig-boxplot':
         return <FacilityBoxplotChart stats={analytics.facilityBoxplots} isInverted={true} />;
+      case 'fig-sebaran-wilayah':
+        return (
+          <ClusterRegionStackedBarChart
+            regionCounts={analytics.clusterRegionCounts}
+            clusterIds={analytics.clusterIds}
+            isInverted={true}
+          />
+        );
       default:
         return null;
     }
@@ -309,7 +336,7 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
       <header className="px-6 py-3 border-b border-[#F2F2EE] flex flex-wrap items-center justify-between gap-4 shrink-0">
         <div className="flex items-center gap-4">
           <span className="small-caps text-[13px] tracking-widest border border-[#F2F2EE] px-2.5 py-0.5 font-mono-code">
-            Slide {slideIdx + 1} dari {PRESENTATION_SLIDES.length}
+            Slide {safeIdx + 1} dari {activeSlides.length}
           </span>
           <span className="font-mono-code text-[13px] text-[#C2C2BC]">
             {slide.nomorVisual} · {stage.labelBlok}
@@ -451,20 +478,20 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
         <button
           type="button"
           onClick={() => setSlideIdx((s) => Math.max(0, s - 1))}
-          disabled={slideIdx === 0}
+          disabled={safeIdx === 0}
           className="px-4 py-1.5 font-mono-code text-[14px] border border-[#F2F2EE] disabled:opacity-40 cursor-pointer"
         >
           &larr; Sebelumnya
         </button>
 
         <div className="hidden md:flex items-center gap-1.5 font-mono-code text-[12px]">
-          {PRESENTATION_SLIDES.map((s, idx) => (
+          {activeSlides.map((s, idx) => (
             <button
               key={s.id}
               type="button"
               onClick={() => setSlideIdx(idx)}
               className={`px-2 py-0.5 border cursor-pointer ${
-                idx === slideIdx
+                idx === safeIdx
                   ? 'bg-[#F2F2EE] text-[#111111] border-[#F2F2EE] font-bold'
                   : 'border-[#4A4A46] text-[#C2C2BC] hover:border-[#F2F2EE]'
               }`}
@@ -476,8 +503,8 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
 
         <button
           type="button"
-          onClick={() => setSlideIdx((s) => Math.min(PRESENTATION_SLIDES.length - 1, s + 1))}
-          disabled={slideIdx === PRESENTATION_SLIDES.length - 1}
+          onClick={() => setSlideIdx((s) => Math.min(activeSlides.length - 1, s + 1))}
+          disabled={safeIdx === activeSlides.length - 1}
           className="px-4 py-1.5 font-mono-code text-[14px] border border-[#F2F2EE] disabled:opacity-40 cursor-pointer"
         >
           Berikutnya &rarr;

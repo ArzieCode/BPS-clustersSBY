@@ -21,6 +21,13 @@ export interface SimpulNode {
   jarak_ke_pusat_kota: number;
   skor_fasilitas: number;
   klaster: number; // 0-indexed or 1-indexed from CSV; normalized internally to 1..K
+  kabupaten_kota?: string;
+}
+
+export interface ClusterRegionCount {
+  kabupaten_kota: string;
+  total: number;
+  countsByCluster: Record<number, number>;
 }
 
 export interface GroupMember {
@@ -168,4 +175,7 @@ export interface ComputedAnalytics {
   pc2VariancePct: number;
   clusterProfiles: ClusterZProfile[];
   facilityBoxplots: BoxplotStat[];
+  hasKabupatenKota: boolean;
+  regionList: string[];
+  clusterRegionCounts: ClusterRegionCount[];
 }

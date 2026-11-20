@@ -21,6 +21,7 @@ import {
 } from 'recharts';
 import {
   BoxplotStat,
+  ClusterRegionCount,
   ClusterZProfile,
   KMetric,
   MissingColStat,
@@ -996,6 +997,318 @@ export const FacilityBoxplotChart: React.FC<{stats: BoxplotStat[]} & ThemeProps>
             );
           })}
         </svg>
+      </div>
+    </div>
+  );
+};
+
+// 10. Stacked Bar Chart: Cluster Distribution per Kabupaten/Kota (Gambar 11, strictly pattern-based, no color)
+const REGION_PATTERN_LABELS: Record<number, string> = {
+  1: 'blok penuh',
+  2: 'putih bergaris tepi',
+  3: 'arsir diagonal',
+  4: 'garis mendatar',
+  5: 'arsir silang',
+  6: 'titik-titik',
+};
+
+export const ClusterRegionStackedBarChart: React.FC<
+  {
+    regionCounts: ClusterRegionCount[];
+    clusterIds: number[];
+  } & ThemeProps
+> = ({regionCounts, clusterIds, isInverted}) => {
+  const c = getInkColors(isInverted);
+  const svgW = 640;
+  const svgH = 270;
+  const padL = 52;
+  const padR = 24;
+  const padT = 24;
+  const padB = 48;
+  const plotW = svgW - padL - padR;
+  const plotH = svgH - padT - padB;
+
+  const maxTotal = Math.max(1, ...regionCounts.map((r) => r.total));
+  const yMax = Math.ceil(maxTotal / 10) * 10 || maxTotal;
+  const yOf = (v: number) => padT + ((yMax - v) / yMax) * plotH;
+
+  const tickStep = Math.max(5, Math.ceil(yMax / 4 / 5) * 5);
+  const yTicks: number[] = [];
+  for (let t = 0; t <= yMax; t += tickStep) yTicks.push(t);
+  if (yTicks[yTicks.length - 1] < yMax) yTicks.push(yMax);
+
+  const uid = isInverted ? 'inv' : 'cet';
+  const fillForCluster = (cid: number): string => {
+    switch (cid) {
+      case 1:
+        return c.ink;
+      case 2:
+        return c.paper;
+      case 3:
+        return `url(#pat-diag-${uid})`;
+      case 4:
+        return `url(#pat-horiz-${uid})`;
+      case 5:
+        return `url(#pat-cross-${uid})`;
+      default:
+        return `url(#pat-dots-${uid})`;
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Pattern Legend */}
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px] font-mono-code">
+        <span className="small-caps text-[12px] tracking-widest text-[var(--ink-subtle)]">
+          Pola Isi:
+        </span>
+        {clusterIds.map((cid) => (
+          <span key={cid} className="inline-flex items-center gap-2">
+            <svg width="18" height="14" aria-hidden="true">
+              <defs>
+                <pattern id={`leg-diag-${uid}`} width="6" height="6" patternUnits="userSpaceOnUse">
+                  <rect width="6" height="6" fill={c.paper} />
+                  <path d="M 0,6 L 6,0 M -1,1 L 1,-1 M 5,7 L 7,5" stroke={c.ink} strokeWidth="1.3" />
+                </pattern>
+                <pattern id={`leg-horiz-${uid}`} width="6" height="5" patternUnits="userSpaceOnUse">
+                  <rect width="6" height="5" fill={c.paper} />
+                  <line x1="0" y1="2.5" x2="6" y2="2.5" stroke={c.ink} strokeWidth="1.4" />
+                </pattern>
+                <pattern id={`leg-cross-${uid}`} width="6" height="6" patternUnits="userSpaceOnUse">
+                  <rect width="6" height="6" fill={c.paper} />
+                  <path d="M 0,6 L 6,0 M 0,0 L 6,6" stroke={c.ink} strokeWidth="1.1" />
+                </pattern>
+                <pattern id={`leg-dots-${uid}`} width="5" height="5" patternUnits="userSpaceOnUse">
+                  <rect width="5" height="5" fill={c.paper} />
+                  <circle cx="2.5" cy="2.5" r="1.2" fill={c.ink} />
+                </pattern>
+              </defs>
+              <rect
+                x="0.5"
+                y="0.5"
+                width="17"
+                height="13"
+                stroke={c.ink}
+                strokeWidth="1.2"
+                fill={
+                  cid === 1
+                    ? c.ink
+                    : cid === 2
+                      ? c.paper
+                      : cid === 3
+                        ? `url(#leg-diag-${uid})`
+                        : cid === 4
+                          ? `url(#leg-horiz-${uid})`
+                          : cid === 5
+                            ? `url(#leg-cross-${uid})`
+                            : `url(#leg-dots-${uid})`
+                }
+              />
+            </svg>
+            <span className="font-semibold">Klaster {toRoman(cid)}</span>
+            <span className="text-[var(--ink-muted)]">
+              ({REGION_PATTERN_LABELS[cid] || `pola ${cid}`})
+            </span>
+          </span>
+        ))}
+      </div>
+
+      {/* Stacked Bar SVG */}
+      <div className="w-full overflow-x-auto">
+        <svg
+          viewBox={`0 0 ${svgW} ${svgH}`}
+          className="w-full h-auto max-h-[270px]"
+          role="img"
+          aria-label="Grafik batang bertumpuk sebaran klaster per kabupaten atau kota di Surabaya Raya"
+        >
+          <defs>
+            <pattern id={`pat-diag-${uid}`} width="7" height="7" patternUnits="userSpaceOnUse">
+              <rect width="7" height="7" fill={c.paper} />
+              <path d="M 0,7 L 7,0 M -1,1 L 1,-1 M 6,8 L 8,6" stroke={c.ink} strokeWidth="1.4" />
+            </pattern>
+            <pattern id={`pat-horiz-${uid}`} width="8" height="6" patternUnits="userSpaceOnUse">
+              <rect width="8" height="6" fill={c.paper} />
+              <line x1="0" y1="3" x2="8" y2="3" stroke={c.ink} strokeWidth="1.5" />
+            </pattern>
+            <pattern id={`pat-cross-${uid}`} width="7" height="7" patternUnits="userSpaceOnUse">
+              <rect width="7" height="7" fill={c.paper} />
+              <path d="M 0,7 L 7,0 M 0,0 L 7,7" stroke={c.ink} strokeWidth="1.1" />
+            </pattern>
+            <pattern id={`pat-dots-${uid}`} width="6" height="6" patternUnits="userSpaceOnUse">
+              <rect width="6" height="6" fill={c.paper} />
+              <circle cx="3" cy="3" r="1.3" fill={c.ink} />
+            </pattern>
+          </defs>
+
+          {/* Horizontal grid */}
+          {yTicks.map((t) => (
+            <g key={t}>
+              <line
+                x1={padL}
+                y1={yOf(t)}
+                x2={svgW - padR}
+                y2={yOf(t)}
+                stroke={c.rule}
+                strokeDasharray="2 2"
+              />
+              <text
+                x={padL - 8}
+                y={yOf(t) + 4}
+                textAnchor="end"
+                fill={c.ink}
+                fontSize="11"
+                fontFamily="IBM Plex Mono"
+              >
+                {t}
+              </text>
+            </g>
+          ))}
+
+          {/* Axes */}
+          <line x1={padL} y1={padT} x2={padL} y2={svgH - padB} stroke={c.ink} strokeWidth="1.2" />
+          <line
+            x1={padL}
+            y1={svgH - padB}
+            x2={svgW - padR}
+            y2={svgH - padB}
+            stroke={c.ink}
+            strokeWidth="1.2"
+          />
+
+          <text
+            x={15}
+            y={padT + plotH / 2}
+            textAnchor="middle"
+            transform={`rotate(-90 15 ${padT + plotH / 2})`}
+            fill={c.ink}
+            fontSize="12"
+            fontFamily="IBM Plex Mono"
+          >
+            Jumlah Simpul
+          </text>
+
+          {/* Stacked bars per region */}
+          {regionCounts.map((reg, idx) => {
+            const bandW = plotW / (regionCounts.length || 1);
+            const barW = Math.min(82, bandW * 0.52);
+            const xLeft = padL + bandW * (idx + 0.5) - barW / 2;
+
+            let cumulative = 0;
+            const segments = clusterIds.map((cid) => {
+              const cnt = reg.countsByCluster[cid] || 0;
+              const yBottom = yOf(cumulative);
+              cumulative += cnt;
+              const yTop = yOf(cumulative);
+              const h = Math.max(0, yBottom - yTop);
+              return {cid, cnt, yTop, h};
+            });
+
+            return (
+              <g key={reg.kabupaten_kota}>
+                {segments.map((seg) => {
+                  if (seg.cnt <= 0) return null;
+                  return (
+                    <g key={seg.cid}>
+                      <rect
+                        x={xLeft}
+                        y={seg.yTop}
+                        width={barW}
+                        height={seg.h}
+                        fill={fillForCluster(seg.cid)}
+                        stroke={c.ink}
+                        strokeWidth="1.4"
+                      >
+                        <title>
+                          {reg.kabupaten_kota} · Klaster {toRoman(seg.cid)}: {seg.cnt} simpul
+                        </title>
+                      </rect>
+                      {seg.h >= 16 && (
+                        <text
+                          x={xLeft + barW / 2}
+                          y={seg.yTop + seg.h / 2 + 4}
+                          textAnchor="middle"
+                          fontSize="11"
+                          fontFamily="IBM Plex Mono"
+                          fontWeight="700"
+                          fill={seg.cid === 1 ? c.paper : c.ink}
+                          stroke={seg.cid === 1 ? 'none' : c.paper}
+                          strokeWidth={seg.cid === 1 ? 0 : 2.5}
+                          paintOrder="stroke"
+                        >
+                          {seg.cnt}
+                        </text>
+                      )}
+                    </g>
+                  );
+                })}
+
+                {/* Total label above stacked bar */}
+                <text
+                  x={xLeft + barW / 2}
+                  y={yOf(reg.total) - 7}
+                  textAnchor="middle"
+                  fontSize="12"
+                  fontFamily="IBM Plex Mono"
+                  fontWeight="700"
+                  fill={c.ink}
+                >
+                  n={reg.total}
+                </text>
+
+                {/* X label */}
+                <text
+                  x={xLeft + barW / 2}
+                  y={svgH - padB + 18}
+                  textAnchor="middle"
+                  fontSize="12"
+                  fontFamily="Source Serif 4"
+                  fontWeight="600"
+                  fill={c.ink}
+                >
+                  {reg.kabupaten_kota}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+      </div>
+
+      {/* Crisp breakdown table for exact cross-region readability */}
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse font-mono-code text-[12px] tabular-nums">
+          <thead>
+            <tr className="border-y border-[var(--rule-strong)] bg-[var(--paper-alt)]">
+              <th className="p-1.5 text-left border border-[var(--rule)]">Kabupaten / Kota</th>
+              {clusterIds.map((cid) => (
+                <th key={cid} className="p-1.5 text-right border border-[var(--rule)]">
+                  Klaster {toRoman(cid)}
+                </th>
+              ))}
+              <th className="p-1.5 text-right border border-[var(--rule)] font-bold">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {regionCounts.map((reg) => (
+              <tr key={reg.kabupaten_kota} className="border-b border-[var(--rule)]">
+                <td className="p-1.5 border border-[var(--rule)] font-body font-semibold">
+                  {reg.kabupaten_kota}
+                </td>
+                {clusterIds.map((cid) => {
+                  const cnt = reg.countsByCluster[cid] || 0;
+                  const pct = reg.total > 0 ? (cnt / reg.total) * 100 : 0;
+                  return (
+                    <td key={cid} className="p-1.5 text-right border border-[var(--rule)]">
+                      {cnt} ({formatIdNumber(pct, 0)}%)
+                    </td>
+                  );
+                })}
+                <td className="p-1.5 text-right border border-[var(--rule)] font-bold">
+                  {reg.total}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );

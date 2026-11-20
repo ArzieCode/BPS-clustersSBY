@@ -20,44 +20,52 @@ function mulberry32(seed: number) {
 
 interface KecamatanZone {
   nama: string;
+  kabupaten_kota: 'Kota Surabaya' | 'Kabupaten Sidoarjo' | 'Kabupaten Gresik';
   lat: number;
   lon: number;
   kepadatan: number; // jiwa/km2
   klasterKecenderungan: number;
-  jarakPusatKm: number;
+  weight: number; // proportional sampling weight (majority in Kota Surabaya)
 }
 
 const ZONES: KecamatanZone[] = [
-  // Klaster 1: Pusat Komersial & Perkantoran Padat
-  {nama: 'Genteng', lat: -7.2592, lon: 112.7426, kepadatan: 14800, klasterKecenderungan: 1, jarakPusatKm: 0.8},
-  {nama: 'Tegalsari', lat: -7.2705, lon: 112.7358, kepadatan: 21500, klasterKecenderungan: 1, jarakPusatKm: 1.6},
-  {nama: 'Bubutan', lat: -7.2469, lon: 112.7285, kepadatan: 23400, klasterKecenderungan: 1, jarakPusatKm: 1.9},
-  {nama: 'Gubeng', lat: -7.2755, lon: 112.7555, kepadatan: 16900, klasterKecenderungan: 1, jarakPusatKm: 2.3},
-  // Klaster 2: Kawasan Permukiman Padat & Kampus
-  {nama: 'Sukolilo', lat: -7.2912, lon: 112.7924, kepadatan: 5400, klasterKecenderungan: 2, jarakPusatKm: 6.4},
-  {nama: 'Mulyorejo', lat: -7.2698, lon: 112.7852, kepadatan: 6300, klasterKecenderungan: 2, jarakPusatKm: 5.5},
-  {nama: 'Tambaksari', lat: -7.2512, lon: 112.7664, kepadatan: 24900, klasterKecenderungan: 2, jarakPusatKm: 3.4},
-  {nama: 'Wonokromo', lat: -7.2974, lon: 112.7341, kepadatan: 18400, klasterKecenderungan: 2, jarakPusatKm: 4.1},
-  {nama: 'Sawahan', lat: -7.2722, lon: 112.7165, kepadatan: 27800, klasterKecenderungan: 2, jarakPusatKm: 3.1},
-  // Klaster 3: Simpul Hub Transit Regional / Terminal & Stasiun Utama
-  {nama: 'Wonocolo', lat: -7.3228, lon: 112.7351, kepadatan: 12100, klasterKecenderungan: 3, jarakPusatKm: 7.2},
-  {nama: 'Gayungan', lat: -7.3356, lon: 112.7262, kepadatan: 7800, klasterKecenderungan: 3, jarakPusatKm: 8.6},
-  {nama: 'Krembangan', lat: -7.2295, lon: 112.7268, kepadatan: 13900, klasterKecenderungan: 3, jarakPusatKm: 4.0},
-  {nama: 'Pabean Cantikan', lat: -7.2175, lon: 112.7346, kepadatan: 12400, klasterKecenderungan: 3, jarakPusatKm: 5.1},
-  // Klaster 4: Pinggiran Berkembang & Akses Rendah
-  {nama: 'Rungkut', lat: -7.3225, lon: 112.7845, kepadatan: 5800, klasterKecenderungan: 4, jarakPusatKm: 8.9},
-  {nama: 'Gunung Anyar', lat: -7.3412, lon: 112.7905, kepadatan: 4900, klasterKecenderungan: 4, jarakPusatKm: 10.6},
-  {nama: 'Tandes', lat: -7.2598, lon: 112.6775, kepadatan: 8300, klasterKecenderungan: 4, jarakPusatKm: 7.6},
-  {nama: 'Lakarsantri', lat: -7.3032, lon: 112.6524, kepadatan: 3400, klasterKecenderungan: 4, jarakPusatKm: 10.8},
-  {nama: 'Kenjeran', lat: -7.2286, lon: 112.7784, kepadatan: 19600, klasterKecenderungan: 4, jarakPusatKm: 6.1},
-  {nama: 'Jambangan', lat: -7.3204, lon: 112.7125, kepadatan: 12900, klasterKecenderungan: 4, jarakPusatKm: 7.5},
-  {nama: 'Dukuh Pakis', lat: -7.2886, lon: 112.6955, kepadatan: 6100, klasterKecenderungan: 2, jarakPusatKm: 5.4},
+  // Kota Surabaya (~65% titik)
+  {nama: 'Genteng', kabupaten_kota: 'Kota Surabaya', lat: -7.2592, lon: 112.7426, kepadatan: 14800, klasterKecenderungan: 1, weight: 4},
+  {nama: 'Tegalsari', kabupaten_kota: 'Kota Surabaya', lat: -7.2705, lon: 112.7358, kepadatan: 21500, klasterKecenderungan: 1, weight: 4},
+  {nama: 'Bubutan', kabupaten_kota: 'Kota Surabaya', lat: -7.2469, lon: 112.7285, kepadatan: 23400, klasterKecenderungan: 1, weight: 3},
+  {nama: 'Gubeng', kabupaten_kota: 'Kota Surabaya', lat: -7.2755, lon: 112.7555, kepadatan: 16900, klasterKecenderungan: 1, weight: 4},
+  {nama: 'Sukolilo', kabupaten_kota: 'Kota Surabaya', lat: -7.2912, lon: 112.7924, kepadatan: 5400, klasterKecenderungan: 2, weight: 3},
+  {nama: 'Mulyorejo', kabupaten_kota: 'Kota Surabaya', lat: -7.2698, lon: 112.7852, kepadatan: 6300, klasterKecenderungan: 2, weight: 3},
+  {nama: 'Tambaksari', kabupaten_kota: 'Kota Surabaya', lat: -7.2512, lon: 112.7664, kepadatan: 24900, klasterKecenderungan: 2, weight: 3},
+  {nama: 'Wonokromo', kabupaten_kota: 'Kota Surabaya', lat: -7.2974, lon: 112.7341, kepadatan: 18400, klasterKecenderungan: 3, weight: 4},
+  {nama: 'Sawahan', kabupaten_kota: 'Kota Surabaya', lat: -7.2722, lon: 112.7165, kepadatan: 27800, klasterKecenderungan: 2, weight: 3},
+  {nama: 'Wonocolo', kabupaten_kota: 'Kota Surabaya', lat: -7.3228, lon: 112.7351, kepadatan: 12100, klasterKecenderungan: 3, weight: 3},
+  {nama: 'Gayungan', kabupaten_kota: 'Kota Surabaya', lat: -7.3356, lon: 112.7262, kepadatan: 7800, klasterKecenderungan: 2, weight: 2},
+  {nama: 'Krembangan', kabupaten_kota: 'Kota Surabaya', lat: -7.2295, lon: 112.7268, kepadatan: 13900, klasterKecenderungan: 3, weight: 3},
+  {nama: 'Rungkut', kabupaten_kota: 'Kota Surabaya', lat: -7.3225, lon: 112.7845, kepadatan: 5800, klasterKecenderungan: 4, weight: 3},
+  {nama: 'Tandes', kabupaten_kota: 'Kota Surabaya', lat: -7.2598, lon: 112.6775, kepadatan: 8300, klasterKecenderungan: 4, weight: 3},
+  {nama: 'Lakarsantri', kabupaten_kota: 'Kota Surabaya', lat: -7.3032, lon: 112.6524, kepadatan: 3400, klasterKecenderungan: 4, weight: 2},
+  {nama: 'Kenjeran', kabupaten_kota: 'Kota Surabaya', lat: -7.2286, lon: 112.7784, kepadatan: 19600, klasterKecenderungan: 4, weight: 2},
+  // Kabupaten Sidoarjo (~20% titik)
+  {nama: 'Waru', kabupaten_kota: 'Kabupaten Sidoarjo', lat: -7.3532, lon: 112.7325, kepadatan: 7850, klasterKecenderungan: 3, weight: 4},
+  {nama: 'Taman', kabupaten_kota: 'Kabupaten Sidoarjo', lat: -7.3568, lon: 112.6942, kepadatan: 7300, klasterKecenderungan: 2, weight: 3},
+  {nama: 'Gedangan', kabupaten_kota: 'Kabupaten Sidoarjo', lat: -7.3924, lon: 112.7261, kepadatan: 5600, klasterKecenderungan: 2, weight: 2},
+  {nama: 'Buduran', kabupaten_kota: 'Kabupaten Sidoarjo', lat: -7.4242, lon: 112.7245, kepadatan: 2450, klasterKecenderungan: 4, weight: 2},
+  {nama: 'Sidoarjo', kabupaten_kota: 'Kabupaten Sidoarjo', lat: -7.4478, lon: 112.7183, kepadatan: 3320, klasterKecenderungan: 1, weight: 3},
+  {nama: 'Sedati', kabupaten_kota: 'Kabupaten Sidoarjo', lat: -7.3812, lon: 112.7734, kepadatan: 1380, klasterKecenderungan: 4, weight: 2},
+  // Kabupaten Gresik (~15% titik)
+  {nama: 'Kebomas', kabupaten_kota: 'Kabupaten Gresik', lat: -7.1715, lon: 112.6335, kepadatan: 3820, klasterKecenderungan: 3, weight: 3},
+  {nama: 'Gresik', kabupaten_kota: 'Kabupaten Gresik', lat: -7.1564, lon: 112.6552, kepadatan: 14100, klasterKecenderungan: 1, weight: 3},
+  {nama: 'Manyar', kabupaten_kota: 'Kabupaten Gresik', lat: -7.1258, lon: 112.6075, kepadatan: 1240, klasterKecenderungan: 4, weight: 2},
+  {nama: 'Driyorejo', kabupaten_kota: 'Kabupaten Gresik', lat: -7.3562, lon: 112.6258, kepadatan: 2150, klasterKecenderungan: 4, weight: 2},
+  {nama: 'Menganti', kabupaten_kota: 'Kabupaten Gresik', lat: -7.2985, lon: 112.5892, kepadatan: 1950, klasterKecenderungan: 4, weight: 2},
 ];
 
 const NAMED_HUBS: Array<{
   nama: string;
   jenis: string;
   kecamatan: string;
+  kabupaten_kota: 'Kota Surabaya' | 'Kabupaten Sidoarjo' | 'Kabupaten Gresik';
   lat: number;
   lon: number;
   klaster: number;
@@ -70,6 +78,7 @@ const NAMED_HUBS: Array<{
     nama: 'Stasiun Surabaya Gubeng',
     jenis: 'Stasiun KAI',
     kecamatan: 'Gubeng',
+    kabupaten_kota: 'Kota Surabaya',
     lat: -7.2653,
     lon: 112.7521,
     klaster: 3,
@@ -82,6 +91,7 @@ const NAMED_HUBS: Array<{
     nama: 'Stasiun Surabaya Pasar Turi',
     jenis: 'Stasiun KAI',
     kecamatan: 'Bubutan',
+    kabupaten_kota: 'Kota Surabaya',
     lat: -7.2484,
     lon: 112.7311,
     klaster: 3,
@@ -93,12 +103,13 @@ const NAMED_HUBS: Array<{
   {
     nama: 'Terminal Purabaya (Bungurasih)',
     jenis: 'Terminal',
-    kecamatan: 'Gayungan',
+    kecamatan: 'Waru',
+    kabupaten_kota: 'Kabupaten Sidoarjo',
     lat: -7.3514,
     lon: 112.7248,
     klaster: 3,
     poiTotal: 118,
-    kepadatan: 7800,
+    kepadatan: 7850,
     simpul500: 8,
     skorFasilitas: 4.7,
   },
@@ -106,6 +117,7 @@ const NAMED_HUBS: Array<{
     nama: 'Terminal Joyoboyo',
     jenis: 'Terminal',
     kecamatan: 'Wonokromo',
+    kabupaten_kota: 'Kota Surabaya',
     lat: -7.2981,
     lon: 112.7376,
     klaster: 3,
@@ -118,6 +130,7 @@ const NAMED_HUBS: Array<{
     nama: 'Stasiun Wonokromo',
     jenis: 'Stasiun KAI',
     kecamatan: 'Wonokromo',
+    kabupaten_kota: 'Kota Surabaya',
     lat: -7.3029,
     lon: 112.7381,
     klaster: 3,
@@ -130,6 +143,7 @@ const NAMED_HUBS: Array<{
     nama: 'Terminal Tambak Osowilangon',
     jenis: 'Terminal',
     kecamatan: 'Tandes',
+    kabupaten_kota: 'Kota Surabaya',
     lat: -7.2194,
     lon: 112.6624,
     klaster: 3,
@@ -139,9 +153,62 @@ const NAMED_HUBS: Array<{
     skorFasilitas: 3.9,
   },
   {
+    nama: 'Stasiun Sidoarjo',
+    jenis: 'Stasiun KAI',
+    kecamatan: 'Sidoarjo',
+    kabupaten_kota: 'Kabupaten Sidoarjo',
+    lat: -7.4463,
+    lon: 112.7166,
+    klaster: 3,
+    poiTotal: 92,
+    kepadatan: 3320,
+    simpul500: 5,
+    skorFasilitas: 4.2,
+  },
+  {
+    nama: 'Terminal Larangan Sidoarjo',
+    jenis: 'Terminal',
+    kecamatan: 'Sidoarjo',
+    kabupaten_kota: 'Kabupaten Sidoarjo',
+    lat: -7.4628,
+    lon: 112.7145,
+    klaster: 3,
+    poiTotal: 84,
+    kepadatan: 3320,
+    simpul500: 5,
+    skorFasilitas: 4.0,
+  },
+  {
+    nama: 'Terminal Bunder Gresik',
+    jenis: 'Terminal',
+    kecamatan: 'Kebomas',
+    kabupaten_kota: 'Kabupaten Gresik',
+    lat: -7.1672,
+    lon: 112.6012,
+    klaster: 3,
+    poiTotal: 76,
+    kepadatan: 3820,
+    simpul500: 4,
+    skorFasilitas: 4.1,
+  },
+  {
+    nama: 'Halte Alun-Alun Gresik',
+    jenis: 'Halte Trans Jatim',
+    kecamatan: 'Gresik',
+    kabupaten_kota: 'Kabupaten Gresik',
+    lat: -7.1566,
+    lon: 112.6559,
+    klaster: 1,
+    poiTotal: 88,
+    kepadatan: 14100,
+    simpul500: 4,
+    skorFasilitas: 3.7,
+  },
+  {
     nama: 'Halte Balai Pemuda',
     jenis: 'Halte Suroboyo Bus',
     kecamatan: 'Genteng',
+    kabupaten_kota: 'Kota Surabaya',
     lat: -7.2636,
     lon: 112.7453,
     klaster: 1,
@@ -154,6 +221,7 @@ const NAMED_HUBS: Array<{
     nama: 'Halte Tunjungan Plaza',
     jenis: 'Halte Suroboyo Bus',
     kecamatan: 'Tegalsari',
+    kabupaten_kota: 'Kota Surabaya',
     lat: -7.2624,
     lon: 112.7393,
     klaster: 1,
@@ -166,6 +234,7 @@ const NAMED_HUBS: Array<{
     nama: 'Halte ITS Bundaran',
     jenis: 'Halte Suroboyo Bus',
     kecamatan: 'Sukolilo',
+    kabupaten_kota: 'Kota Surabaya',
     lat: -7.2823,
     lon: 112.7945,
     klaster: 2,
@@ -178,6 +247,7 @@ const NAMED_HUBS: Array<{
     nama: 'Halte UNAIR Kampus C',
     jenis: 'Halte Suroboyo Bus',
     kecamatan: 'Mulyorejo',
+    kabupaten_kota: 'Kota Surabaya',
     lat: -7.2676,
     lon: 112.7848,
     klaster: 2,
@@ -190,6 +260,7 @@ const NAMED_HUBS: Array<{
     nama: 'Halte Rungkut Madya',
     jenis: 'Halte Feeder',
     kecamatan: 'Rungkut',
+    kabupaten_kota: 'Kota Surabaya',
     lat: -7.3315,
     lon: 112.7894,
     klaster: 4,
@@ -202,6 +273,7 @@ const NAMED_HUBS: Array<{
     nama: 'Halte Lakarsantri Timur',
     jenis: 'Halte Feeder',
     kecamatan: 'Lakarsantri',
+    kabupaten_kota: 'Kota Surabaya',
     lat: -7.3054,
     lon: 112.6584,
     klaster: 4,
@@ -212,7 +284,7 @@ const NAMED_HUBS: Array<{
   },
 ];
 
-const STREET_PREFIXES = [
+const STREET_PREFIXES_SBY = [
   'Darmo',
   'Basuki Rahmat',
   'Panglima Sudirman',
@@ -225,34 +297,43 @@ const STREET_PREFIXES = [
   'Mayjen Sungkono',
   'HR Muhammad',
   'Ngagel Jaya',
-  'Pucang Anom',
   'Rajawali',
   'Kembang Jepun',
   'Veteran',
-  'Demak',
   'Manukan',
-  'Benowo',
   'Kenjeran',
-  'Wiyung',
   'Margorejo',
   'Jemursari',
   'Rungkut Industri',
   'Siwalankerto',
   'Ketintang',
-  'Karah',
   'Kedungdoro',
-  'Pasar Kembang',
-  'Banyu Urip',
-  'Kalijudan',
-  'Sutorejo',
   'Keputih',
   'Semolowaru',
-  'Medokan Ayu',
-  'Kapas Krampung',
-  'Tambakrejo',
-  'Prapen',
-  'Kutisari',
-  'Karangpilang',
+];
+
+const STREET_PREFIXES_SDA = [
+  'Raya Waru',
+  'Brigjen Katamso',
+  'Letjen Sutoyo',
+  'Raya Taman',
+  'Raya Gedangan',
+  'Raya Buduran',
+  'Pahlawan Sidoarjo',
+  'Gajah Mada',
+  'Jenggolo',
+  'Juanda',
+];
+
+const STREET_PREFIXES_GRS = [
+  'DR Wahidin',
+  'Kartini Gresik',
+  'Veteran Gresik',
+  'Panglima Sudirman',
+  'Raya Manyar',
+  'Raya Driyorejo',
+  'Raya Menganti',
+  'Usman Sadar',
 ];
 
 export function generateSyntheticDataset(): SimpulNode[] {
@@ -276,12 +357,13 @@ export function generateSyntheticDataset(): SimpulNode[] {
         : -props.reduce((acc, p) => (p > 0 ? acc + p * Math.log(p) : acc), 0) / Math.log(5);
 
     nodes.push({
-      id: `SBY-${String(idx + 1).padStart(3, '0')}`,
+      id: `SBR-${String(idx + 1).padStart(3, '0')}`,
       nama_simpul: hub.nama,
       jenis_simpul: hub.jenis,
       lat: hub.lat,
       lon: hub.lon,
       kecamatan: hub.kecamatan,
+      kabupaten_kota: hub.kabupaten_kota,
       poi_total_500m: hub.poiTotal,
       prop_poi_pendidikan: Number(props[0].toFixed(3)),
       prop_poi_kesehatan: Number(props[1].toFixed(3)),
@@ -299,28 +381,44 @@ export function generateSyntheticDataset(): SimpulNode[] {
     });
   });
 
-  // Generate remaining nodes up to 120 total
+  // Build weighted zone pool so ~65% are in Kota Surabaya, ~20% Kabupaten Sidoarjo, ~15% Kabupaten Gresik
+  const weightedZones: KecamatanZone[] = [];
+  ZONES.forEach((z) => {
+    for (let w = 0; w < z.weight; w++) {
+      weightedZones.push(z);
+    }
+  });
+
   const targetCount = 120;
   for (let i = nodes.length; i < targetCount; i++) {
-    const zone = ZONES[i % ZONES.length];
-    // Add controlled spatial jitter around kecamatan centroid
+    const zone = weightedZones[(i * 7) % weightedZones.length];
     const lat = Number((zone.lat + (rand() - 0.5) * 0.018).toFixed(5));
     const lon = Number((zone.lon + (rand() - 0.5) * 0.022).toFixed(5));
     const klaster = zone.klasterKecenderungan;
 
     let jenis = 'Halte Suroboyo Bus';
-    if (klaster === 4) {
-      jenis = rand() > 0.25 ? 'Halte Feeder' : 'Halte Suroboyo Bus';
-    } else if (klaster === 3) {
-      const r = rand();
-      jenis = r > 0.72 ? 'Terminal' : r > 0.48 ? 'Stasiun KAI' : 'Halte Suroboyo Bus';
-    } else if (klaster === 2) {
-      jenis = rand() > 0.45 ? 'Halte Suroboyo Bus' : 'Halte Feeder';
+    if (zone.kabupaten_kota === 'Kota Surabaya') {
+      if (klaster === 4) {
+        jenis = rand() > 0.25 ? 'Halte Feeder' : 'Halte Suroboyo Bus';
+      } else if (klaster === 3) {
+        const r = rand();
+        jenis = r > 0.72 ? 'Terminal' : r > 0.48 ? 'Stasiun KAI' : 'Halte Suroboyo Bus';
+      } else if (klaster === 2) {
+        jenis = rand() > 0.45 ? 'Halte Suroboyo Bus' : 'Halte Feeder';
+      } else {
+        jenis = rand() > 0.2 ? 'Halte Suroboyo Bus' : 'Halte Feeder';
+      }
     } else {
-      jenis = rand() > 0.2 ? 'Halte Suroboyo Bus' : 'Halte Feeder';
+      // Sidoarjo & Gresik mostly served by Trans Jatim, KAI Commuter, Terminal, and Feeder
+      if (klaster === 3) {
+        jenis = rand() > 0.55 ? 'Stasiun KAI' : 'Halte Trans Jatim';
+      } else if (klaster === 4) {
+        jenis = rand() > 0.35 ? 'Halte Feeder' : 'Halte Trans Jatim';
+      } else {
+        jenis = 'Halte Trans Jatim';
+      }
     }
 
-    // Feature generation conditioned clearly on cluster profiles so K-Means & PCA reflect realistic structures
     let poiTotal = 0;
     let simpul500 = 0;
     let jarakTerdekat = 350;
@@ -329,7 +427,6 @@ export function generateSyntheticDataset(): SimpulNode[] {
     let rawProps = [0.2, 0.2, 0.2, 0.2, 0.2];
 
     if (klaster === 1) {
-      // Pusat Bisnis & Komersial Padat
       poiTotal = Math.round(78 + rand() * 68);
       simpul500 = Math.round(3 + rand() * 4);
       jarakTerdekat = Math.round(140 + rand() * 190);
@@ -337,7 +434,6 @@ export function generateSyntheticDataset(): SimpulNode[] {
       skorFasilitas = Number((3.4 + rand() * 1.2).toFixed(2));
       rawProps = [0.08 + rand() * 0.08, 0.08 + rand() * 0.08, 0.30 + rand() * 0.14, 0.34 + rand() * 0.14, 0.06 + rand() * 0.05];
     } else if (klaster === 2) {
-      // Kawasan Pendidikan & Permukiman
       poiTotal = Math.round(34 + rand() * 38);
       simpul500 = Math.round(1 + rand() * 3);
       jarakTerdekat = Math.round(240 + rand() * 260);
@@ -345,7 +441,6 @@ export function generateSyntheticDataset(): SimpulNode[] {
       skorFasilitas = Number((2.7 + rand() * 1.1).toFixed(2));
       rawProps = [0.36 + rand() * 0.22, 0.10 + rand() * 0.08, 0.10 + rand() * 0.08, 0.20 + rand() * 0.1, 0.14 + rand() * 0.08];
     } else if (klaster === 3) {
-      // Hub Transit / Koridor Sibuk
       poiTotal = Math.round(62 + rand() * 58);
       simpul500 = Math.round(4 + rand() * 4);
       jarakTerdekat = Math.round(110 + rand() * 150);
@@ -353,7 +448,6 @@ export function generateSyntheticDataset(): SimpulNode[] {
       skorFasilitas = Number((3.8 + rand() * 1.0).toFixed(2));
       rawProps = [0.14 + rand() * 0.08, 0.14 + rand() * 0.08, 0.24 + rand() * 0.1, 0.30 + rand() * 0.12, 0.12 + rand() * 0.06];
     } else {
-      // Pinggiran Berkembang & Akses Terbatas
       const isZeroPoi = i % 29 === 0;
       poiTotal = isZeroPoi ? 0 : Math.round(4 + rand() * 22);
       simpul500 = Math.round(rand() * 1.4);
@@ -370,18 +464,25 @@ export function generateSyntheticDataset(): SimpulNode[] {
         ? 0
         : -props.reduce((acc, p) => (p > 0 ? acc + p * Math.log(p) : acc), 0) / Math.log(5);
 
-    const street = STREET_PREFIXES[i % STREET_PREFIXES.length];
+    const streetPool =
+      zone.kabupaten_kota === 'Kabupaten Sidoarjo'
+        ? STREET_PREFIXES_SDA
+        : zone.kabupaten_kota === 'Kabupaten Gresik'
+          ? STREET_PREFIXES_GRS
+          : STREET_PREFIXES_SBY;
+    const street = streetPool[i % streetPool.length];
     const suffix = i % 2 === 0 ? 'A' : 'B';
     const prefixLabel =
       jenis === 'Stasiun KAI' ? 'Stasiun' : jenis === 'Terminal' ? 'Terminal' : 'Halte';
 
     nodes.push({
-      id: `SBY-${String(i + 1).padStart(3, '0')}`,
+      id: `SBR-${String(i + 1).padStart(3, '0')}`,
       nama_simpul: `${prefixLabel} ${street} ${suffix}`,
       jenis_simpul: jenis,
       lat,
       lon,
       kecamatan: zone.nama,
+      kabupaten_kota: zone.kabupaten_kota,
       poi_total_500m: poiTotal,
       prop_poi_pendidikan: Number(props[0].toFixed(3)),
       prop_poi_kesehatan: Number(props[1].toFixed(3)),
@@ -440,16 +541,16 @@ export const INITIAL_WRANGLING_LOG: WranglingLogEntry[] = [
   {
     id: 'w4',
     masalah: 'Nilai ekstrem pada poi_total_500m & jumlah_simpul_500m di stasiun/terminal utama',
-    jumlahTerdampak: '6 node (5,0%)',
+    jumlahTerdampak: '8 node (6,7%)',
     tindakan: 'Ditandai sebagai hub valid (tidak dibuang) dan ditransformasi log1p sebelum scaling',
-    alasan: 'Stasiun Gubeng, Pasar Turi, dan Terminal Purabaya merupakan simpul utama nyata di Surabaya.',
+    alasan: 'Stasiun Gubeng, Pasar Turi, Terminal Purabaya, dan Terminal Bunder merupakan simpul utama nyata di Surabaya Raya.',
   },
   {
     id: 'w5',
-    masalah: 'Nama kecamatan di OSM tidak seragam kapitalisasi dan ejaan dengan tabel BPS',
-    jumlahTerdampak: '9 baris (7,5%)',
-    tindakan: 'Normalisasi huruf dan spatial join ke GeoJSON batas administrasi kecamatan BPS',
-    alasan: 'Memastikan angka kepadatan penduduk BPS bergabung akurat ke setiap simpul.',
+    masalah: 'Nama kecamatan & kabupaten/kota di OSM tidak seragam dengan tabel BPS Surabaya Raya',
+    jumlahTerdampak: '11 baris (9,2%)',
+    tindakan: 'Normalisasi huruf dan spatial join ke GeoJSON batas kecamatan Kota Surabaya, Sidoarjo, dan Gresik',
+    alasan: 'Memastikan angka kepadatan penduduk BPS bergabung akurat ke setiap simpul lintas wilayah.',
   },
 ];
 
@@ -480,26 +581,27 @@ export const INITIAL_RECOMMENDATIONS: ClusterRecommendation[] = [
     klaster: 3,
     namaKlaster: 'Simpul Transit Regional & Hub Antar-Moda',
     arahStrategi:
-      'Penguatan integrasi transfer antar-moda (kereta api, bus kota, dan pengumpan/feeder), kejelasan penunjuk arah (wayfinding), dan sinkronisasi jadwal kedatangan.',
+      'Penguatan integrasi transfer antar-moda (kereta api, bus kota, Trans Jatim, dan pengumpan/feeder), kejelasan penunjuk arah (wayfinding), dan sinkronisasi jadwal kedatangan.',
   },
   {
     klaster: 4,
     namaKlaster: 'Kawasan Pinggiran Berkembang & Akses Terbatas',
     arahStrategi:
-      'Peningkatan kelengkapan prasarana dasar perhentian (penanda halte, penerangan, atap sederhana) serta penguatan koneksi rute pengumpan menuju koridor utama.',
+      'Peningkatan kelengkapan prasarana dasar perhentian (penanda halte, penerangan, atap sederhana) serta penguatan koneksi rute pengumpan menuju koridor utama Surabaya Raya.',
   },
 ];
 
 export const INITIAL_INSIGHTS: Record<string, string> = {
-  peta: 'Sebaran simpul masih terkonsentrasi di koridor tengah utara-selatan Surabaya, sedangkan wilayah barat dan tenggara memiliki jarak antar-simpul lebih renggang.',
+  peta: 'Sebaran simpul terkonsentrasi di Kota Surabaya, sedangkan koridor penghubung ke Kabupaten Sidoarjo dan Kabupaten Gresik bertumpu pada jalur arteri serta terminal regional.',
   missing: 'Atribut kelengkapan fasilitas fisik di OpenStreetMap memiliki tingkat kekosongan tertinggi sehingga memerlukan aturan imputasi yang terdokumentasi.',
   dedup: 'Penghapusan node berjarak <= 25 m memangkas bias penghitungan ganda halte dua arah pada ruas jalan arteri.',
   korelasi: 'Hubungan antarfitur kepadatan POI dan persimpangan perlu dipantau terhadap ambang |rho| > 0,85 guna mencegah pembobotan ganda pada jarak Euclidean.',
   log1p: 'Transformasi log1p meredam kemencengan kanan akibat keberadaan stasiun dan terminal besar tanpa membuang observasi sah.',
-  outlier: 'Simpul yang tertandai metode IQR dan Isolation Forest seluruhnya bertepatan dengan hub transit utama, sehingga dipertahankan dalam pemodelan.',
+  outlier: 'Simpul yang tertandai metode IQR dan Isolation Forest seluruhnya bertepatan dengan hub transit utama Surabaya Raya, sehingga dipertahankan dalam pemodelan.',
   pemilihan_k: 'Nilai k = 4 dipilih sebagai titik kompromi antara kestabilan silhouette, penurunan inersia, dan keterbacaan profil kawasan.',
   pca: 'Proyeksi dua komponen utama merangkum variasi dominan karakteristik kawasan, meski penyebaran lanjutan tetap perlu dibaca melalui heatmap z-score.',
   heatmap_profil: 'Kontras z-score memperlihatkan pemisahan jelas antara kawasan berkepadatan POI tinggi dan kawasan pinggiran berjarak simpul jauh.',
   radar: 'Pola garis tiap klaster menunjukkan profil fitur yang tidak seragam, menandakan perbedaan karakter lingkungan sekitar simpul.',
   boxplot: 'Sebaran skor fasilitas pada klaster pinggiran cenderung lebih rendah dibandingkan klaster hub transit dan pusat kota.',
+  sebaran_wilayah: 'Komposisi klaster di Kota Surabaya lebih beragam hingga pusat bisnis padat, sedangkan simpul di Sidoarjo dan Gresik lebih banyak mengisi klaster hub transit dan kawasan berkembang.',
 };

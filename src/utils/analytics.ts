@@ -1,6 +1,7 @@
 import Papa from 'papaparse';
 import {
   BoxplotStat,
+  ClusterRegionCount,
   ClusterZProfile,
   ComputedAnalytics,
   KMetric,
@@ -675,6 +676,50 @@ export function computeAnalytics(
   const outliers = detectOutliers(nodes);
   const zeroPoiCount = nodes.filter((n) => n.poi_total_500m === 0).length;
 
+  // Optional kabupaten_kota detection and cluster-by-region breakdown
+  const hasKabupatenKota = nodes.some(
+    (n) => typeof n.kabupaten_kota === 'string' && n.kabupaten_kota.trim().length > 0
+  );
+
+  const preferredOrder = ['Kota Surabaya', 'Kabupaten Sidoarjo', 'Kabupaten Gresik'];
+  const regionSet = new Set<string>();
+  if (hasKabupatenKota) {
+    nodes.forEach((n) => {
+      const reg = (n.kabupaten_kota || '').trim();
+      if (reg) regionSet.add(reg);
+    });
+  }
+  const regionList = Array.from(regionSet).sort((a, b) => {
+    const ia = preferredOrder.indexOf(a);
+    const ib = preferredOrder.indexOf(b);
+    if (ia !== -1 && ib !== -1) return ia - ib;
+    if (ia !== -1) return -1;
+    if (ib !== -1) return 1;
+    return a.localeCompare(b, 'id');
+  });
+
+  const clusterRegionCounts: ClusterRegionCount[] = hasKabupatenKota
+    ? regionList.map((reg) => {
+        const countsByCluster: Record<number, number> = {};
+        clusterIds.forEach((cid) => {
+          countsByCluster[cid] = 0;
+        });
+        let total = 0;
+        nodes.forEach((n, idx) => {
+          if ((n.kabupaten_kota || '').trim() === reg) {
+            const cid = normalizedLabels[idx];
+            countsByCluster[cid] = (countsByCluster[cid] || 0) + 1;
+            total++;
+          }
+        });
+        return {
+          kabupaten_kota: reg,
+          total,
+          countsByCluster,
+        };
+      })
+    : [];
+
   void rawX;
 
   return {
@@ -698,6 +743,9 @@ export function computeAnalytics(
     pc2VariancePct: pca.pc2Pct,
     clusterProfiles,
     facilityBoxplots,
+    hasKabupatenKota,
+    regionList,
+    clusterRegionCounts,
   };
 }
 
@@ -906,6 +954,10 @@ export function parseUploadedCsv(csvText: string): {
       return Number.isFinite(v) ? v : fallback;
     };
 
+    const kabVal = fields.includes('kabupaten_kota')
+      ? (row.kabupaten_kota || '').trim()
+      : '';
+
     nodes.push({
       id: `CSV-${String(idx + 1).padStart(3, '0')}`,
       nama_simpul: (row.nama_simpul || `Simpul ${idx + 1}`).trim(),
@@ -913,6 +965,7 @@ export function parseUploadedCsv(csvText: string): {
       lat,
       lon,
       kecamatan: (row.kecamatan || 'Tidak Diketahui').trim(),
+      ...(kabVal ? {kabupaten_kota: kabVal} : {}),
       poi_total_500m: num('poi_total_500m'),
       prop_poi_pendidikan: num('prop_poi_pendidikan'),
       prop_poi_kesehatan: num('prop_poi_kesehatan'),

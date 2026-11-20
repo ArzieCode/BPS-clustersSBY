@@ -102,17 +102,28 @@ import pandas as pd
 import geopandas as gpd
 
 overpass_url = "https://overpass-api.de/api/interpreter"
+# Cakupan Surabaya Raya: Kota Surabaya, Kabupaten Sidoarjo, Kabupaten Gresik
 query = """
-[out:json][timeout:60];
-area["name"="Surabaya"]->.sby;
+[out:json][timeout:90];
+(
+  area["name"="Surabaya"]->.sby;
+  area["name"="Sidoarjo"]->.sda;
+  area["name"="Gresik"]->.grs;
+);
 (
   node["highway"="bus_stop"](area.sby);
   node["railway"="station"](area.sby);
   node["amenity"="bus_station"](area.sby);
+  node["highway"="bus_stop"](area.sda);
+  node["railway"="station"](area.sda);
+  node["amenity"="bus_station"](area.sda);
+  node["highway"="bus_stop"](area.grs);
+  node["railway"="station"](area.grs);
+  node["amenity"="bus_station"](area.grs);
 );
 out body;
 """
-resp = requests.post(overpass_url, data={"data": query}, timeout=60)
+resp = requests.post(overpass_url, data={"data": query}, timeout=90)
 resp.raise_for_status()
 elements = resp.json()["elements"]
 
@@ -135,11 +146,11 @@ gdf_simpul = gpd.GeoDataFrame(
     geometry=gpd.points_from_xy(df_simpul["lon"], df_simpul["lat"]),
     crs="EPSG:4326",
 )
-gdf_kec = gpd.read_file("batas_kecamatan_surabaya.geojson").to_crs("EPSG:4326")
-df_bps = pd.read_csv("bps_kepadatan_kecamatan.csv")
+gdf_kec = gpd.read_file("batas_kecamatan_surabaya_raya.geojson").to_crs("EPSG:4326")
+df_bps = pd.read_csv("bps_kepadatan_surabaya_raya.csv")
 
-df_joined = gpd.sjoin(gdf_simpul, gdf_kec[["kecamatan", "geometry"]], how="left", predicate="within")
-df_final = df_joined.merge(df_bps, on="kecamatan", how="left")
+df_joined = gpd.sjoin(gdf_simpul, gdf_kec[["kabupaten_kota", "kecamatan", "geometry"]], how="left", predicate="within")
+df_final = df_joined.merge(df_bps, on=["kabupaten_kota", "kecamatan"], how="left")
 print(df_final.head())`;
 
 const PROFILING_AUTO_CODE = `# kode otomatis, mohon diperiksa
@@ -182,7 +193,8 @@ for _, row in df.iterrows():
         ),
     ).add_to(peta)
 
-peta.save("peta_klaster_surabaya.html")`;
+peta.fit_bounds([[df["lat"].min(), df["lon"].min()], [df["lat"].max(), df["lon"].max()]])
+peta.save("peta_klaster_surabaya_raya.html")`;
 
 export const INITIAL_STAGE_APPENDICES: Record<StageKey, StageAppendix> = {
   ingestion: {
@@ -193,11 +205,11 @@ export const INITIAL_STAGE_APPENDICES: Record<StageKey, StageAppendix> = {
     penanggungJawab: 'Anggota A',
     kodePython: INGESTION_AUTO_CODE,
     apaYangDilakukan:
-      'Mengambil titik koordinat halte, stasiun, dan terminal Surabaya dari Overpass API OpenStreetMap lalu menggabungkannya dengan poligon batas kecamatan dan kepadatan penduduk BPS.',
+      'Mengambil titik koordinat halte, stasiun, dan terminal di Surabaya Raya (Kota Surabaya, Kabupaten Sidoarjo, Kabupaten Gresik) dari Overpass API OpenStreetMap lalu menggabungkannya dengan poligon batas kecamatan dan kepadatan penduduk BPS.',
     alasanPemilihanMetode:
-      'Spatial join berbasis GeoPandas (predicate="within") memastikan setiap titik simpul memperoleh atribut kecamatan resmi BPS meskipun tag addr:suburb di OpenStreetMap tidak terisi.',
+      'Spatial join berbasis GeoPandas (predicate="within") memastikan setiap titik simpul memperoleh atribut kabupaten/kota dan kecamatan resmi BPS meskipun tag addr:suburb di OpenStreetMap tidak terisi.',
     skripPresentasi:
-      'Pada tahap awal, kami menarik koordinat simpul transportasi Surabaya dari OpenStreetMap menggunakan Overpass API. Karena atribut kecamatan di OSM sering kosong, kami melakukan spatial join terhadap batas administrasi GeoJSON untuk menautkan data kepadatan penduduk resmi dari BPS.',
+      'Pada tahap awal, kami menarik koordinat simpul transportasi wilayah Surabaya Raya—mencakup Kota Surabaya, Sidoarjo, dan Gresik—dari OpenStreetMap menggunakan Overpass API. Karena atribut administrasi di OSM sering kosong, kami melakukan spatial join terhadap batas kecamatan GeoJSON untuk menautkan data kepadatan penduduk resmi dari BPS.',
     pertanyaanPenguji: [
       {
         id: 'q-ing-1',
@@ -271,7 +283,7 @@ export const INITIAL_STAGE_APPENDICES: Record<StageKey, StageAppendix> = {
         id: 'q-cln-1',
         pertanyaan: 'Mengapa memilih ambang batas 25 meter dan bukan 50 meter?',
         jawaban:
-          'Lebar ruas jalan raya di Surabaya umumnya 10–20 meter; ambang 50 meter berisiko menggabungkan dua halte berbeda di persimpangan besar.',
+          'Lebar ruas jalan raya di kawasan Surabaya Raya umumnya 10–20 meter; ambang 50 meter berisiko menggabungkan dua halte berbeda di persimpangan besar.',
       },
       {
         id: 'q-cln-2',

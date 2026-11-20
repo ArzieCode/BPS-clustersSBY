@@ -2,6 +2,7 @@ import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {AppendixDrawer} from './components/AppendixDrawer';
 import {
   ClusterRadarChart,
+  ClusterRegionStackedBarChart,
   DedupComparisonChart,
   FacilityBoxplotChart,
   Log1pHistogramChart,
@@ -128,6 +129,7 @@ export default function App() {
   const [stages, setStages] = useState<Record<StageKey, StageAppendix>>(INITIAL_STAGE_APPENDICES);
 
   const [activeChapter, setActiveChapter] = useState<string>('bab-1');
+  const [selectedRegion, setSelectedRegion] = useState<string>('semua');
   const [drawerOpen, setDrawerOpen] = useState<boolean>(false);
   const [drawerStageKey, setDrawerStageKey] = useState<StageKey>('ingestion');
   const [drawerVisualTitle, setDrawerVisualTitle] = useState<string>('');
@@ -138,16 +140,45 @@ export default function App() {
 
   const isInverted = theme === 'terbalik';
 
-  // Compute all statistical outputs dynamically from active dataset
+  // Detect optional kabupaten_kota column and available regions from full dataset
+  const {hasKabupatenKota, regionList} = useMemo(() => {
+    const hasCol = nodes.some(
+      (n) => typeof n.kabupaten_kota === 'string' && n.kabupaten_kota.trim().length > 0
+    );
+    const preferredOrder = ['Kota Surabaya', 'Kabupaten Sidoarjo', 'Kabupaten Gresik'];
+    const set = new Set<string>();
+    if (hasCol) {
+      nodes.forEach((n) => {
+        const reg = (n.kabupaten_kota || '').trim();
+        if (reg) set.add(reg);
+      });
+    }
+    const list = Array.from(set).sort((a, b) => {
+      const ia = preferredOrder.indexOf(a);
+      const ib = preferredOrder.indexOf(b);
+      if (ia !== -1 && ib !== -1) return ia - ib;
+      if (ia !== -1) return -1;
+      if (ib !== -1) return 1;
+      return a.localeCompare(b, 'id');
+    });
+    return {hasKabupatenKota: hasCol, regionList: list};
+  }, [nodes]);
+
+  const filteredNodes = useMemo(() => {
+    if (!hasKabupatenKota || selectedRegion === 'semua') return nodes;
+    return nodes.filter((n) => (n.kabupaten_kota || '').trim() === selectedRegion);
+  }, [nodes, hasKabupatenKota, selectedRegion]);
+
+  // Compute all statistical outputs dynamically from active (and region-filtered) dataset
   const analytics = useMemo(
     () =>
-      computeAnalytics(nodes, {
+      computeAnalytics(filteredNodes, {
         isSampleData,
         uploadedMissingStats,
         overrideKMetrics,
         overridePreDedupCount,
       }),
-    [nodes, isSampleData, uploadedMissingStats, overrideKMetrics, overridePreDedupCount]
+    [filteredNodes, isSampleData, uploadedMissingStats, overrideKMetrics, overridePreDedupCount]
   );
 
   // Sync recommendations array if uploaded CSV has different cluster count
@@ -223,6 +254,7 @@ export default function App() {
       setIsSampleData(false);
       setUploadedFileName(file.name);
       setOverridePreDedupCount(null);
+      setSelectedRegion('semua');
     };
     reader.onerror = () => {
       setUploadError('Gagal membaca berkas CSV dari perangkat.');
@@ -279,6 +311,7 @@ export default function App() {
     setOverrideKMetrics(null);
     setOverridePreDedupCount(null);
     setUploadError(null);
+    setSelectedRegion('semua');
   };
 
   return (
@@ -373,6 +406,51 @@ export default function App() {
             </button>
           </div>
         </div>
+
+        {/* Region Filter Bar (rendered ONLY if CSV/data includes kabupaten_kota) */}
+        {hasKabupatenKota && regionList.length > 0 && (
+          <div className="border-t border-[var(--rule)] bg-[var(--paper-alt)]">
+            <div className="max-w-[1380px] mx-auto px-4 md:px-8 py-2 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="small-caps text-[12px] tracking-widest text-[var(--ink-muted)] mr-1">
+                  Filter Wilayah (Peta &amp; Semua Grafik):
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedRegion('semua')}
+                  className={`px-2.5 py-1 font-mono-code text-[12px] border cursor-pointer fade-150 ${
+                    selectedRegion === 'semua'
+                      ? 'border-[var(--rule-strong)] bg-[var(--ink)] text-[var(--paper)] font-semibold'
+                      : 'border-[var(--rule)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--rule-strong)]'
+                  }`}
+                >
+                  Semua Wilayah ({nodes.length})
+                </button>
+                {regionList.map((reg) => {
+                  const cnt = nodes.filter((n) => (n.kabupaten_kota || '').trim() === reg).length;
+                  const active = selectedRegion === reg;
+                  return (
+                    <button
+                      key={reg}
+                      type="button"
+                      onClick={() => setSelectedRegion(reg)}
+                      className={`px-2.5 py-1 font-mono-code text-[12px] border cursor-pointer fade-150 ${
+                        active
+                          ? 'border-[var(--rule-strong)] bg-[var(--ink)] text-[var(--paper)] font-semibold'
+                          : 'border-[var(--rule)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--rule-strong)]'
+                      }`}
+                    >
+                      {reg} ({cnt})
+                    </button>
+                  );
+                })}
+              </div>
+              <span className="font-mono-code text-[12px] tabular-nums text-[var(--ink-subtle)]">
+                Aktif: {filteredNodes.length} simpul
+              </span>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Upload Error Alert (monochrome, no window.alert) */}
@@ -474,7 +552,8 @@ export default function App() {
               <p className="mt-5 text-[18px] leading-relaxed text-[var(--ink)]">
                 Dokumen statistik ini menyajikan proses <em className="italic">data wrangling</em>{' '}
                 dan pengelompokan (<em>K-Means clustering</em>) terhadap simpul halte, stasiun,
-                serta terminal di Surabaya Raya berdasarkan karakter kawasan sekitar menggunakan
+                serta terminal di kawasan <strong>Surabaya Raya</strong> (Kota Surabaya, Kabupaten
+                Sidoarjo, dan Kabupaten Gresik) berdasarkan karakter kawasan sekitar menggunakan
                 data OpenStreetMap (Overpass API), kepadatan penduduk per kecamatan dari BPS, dan
                 batas administrasi GeoJSON. Hasil pengelompokan menggambarkan tipologi lingkungan
                 kawasan sekitar simpul sebagai dasar penentuan arah strategi layanan yang berbeda,
@@ -745,8 +824,13 @@ export default function App() {
             >
               <SurabayaMap
                 nodes={nodes}
+                totalUnfilteredCount={nodes.length}
                 clusterIds={analytics.clusterIds}
                 isInverted={isInverted}
+                hasKabupatenKota={hasKabupatenKota}
+                regionList={regionList}
+                selectedRegion={selectedRegion}
+                onSelectRegion={setSelectedRegion}
               />
             </FigureWrapper>
           </section>
@@ -969,11 +1053,11 @@ export default function App() {
                       <span>Jumlah node mentah sebelum dedup (N):</span>
                       <input
                         type="number"
-                        min={nodes.length}
+                        min={filteredNodes.length}
                         value={overridePreDedupCount ?? analytics.preDedupCount}
                         onChange={(e) => {
                           const v = Number(e.target.value);
-                          if (Number.isFinite(v) && v >= nodes.length) {
+                          if (Number.isFinite(v) && v >= filteredNodes.length) {
                             setOverridePreDedupCount(v);
                           }
                         }}
@@ -1061,7 +1145,7 @@ export default function App() {
               onUpdateInsight={handleUpdateInsight}
               onOpenAppendix={handleOpenAppendix}
             >
-              <Log1pHistogramChart nodes={nodes} isInverted={isInverted} />
+              <Log1pHistogramChart nodes={filteredNodes} isInverted={isInverted} />
             </FigureWrapper>
 
             {/* Tabel 2: Validated Hub Outliers */}
@@ -1258,6 +1342,27 @@ export default function App() {
             >
               <FacilityBoxplotChart stats={analytics.facilityBoxplots} isInverted={isInverted} />
             </FigureWrapper>
+
+            {/* Gambar 11: Sebaran Klaster per Kabupaten/Kota (Batang Bertumpuk tanpa warna; tampil hanya bila kolom kabupaten_kota ada) */}
+            {analytics.hasKabupatenKota && analytics.clusterRegionCounts.length > 0 && (
+              <FigureWrapper
+                id="fig-sebaran-wilayah"
+                kind="figure"
+                label="Gambar 11."
+                caption="Sebaran jumlah simpul tiap klaster per kabupaten/kota di Surabaya Raya menggunakan pola isi tanpa warna."
+                stageKey="profil_klaster"
+                insightKey="sebaran_wilayah"
+                insightText={insights.sebaran_wilayah}
+                onUpdateInsight={handleUpdateInsight}
+                onOpenAppendix={handleOpenAppendix}
+              >
+                <ClusterRegionStackedBarChart
+                  regionCounts={analytics.clusterRegionCounts}
+                  clusterIds={analytics.clusterIds}
+                  isInverted={isInverted}
+                />
+              </FigureWrapper>
+            )}
           </section>
 
           <hr className="border-t border-[var(--rule)] max-w-[760px]" />
@@ -1513,7 +1618,7 @@ export default function App() {
       <PresentationMode
         isOpen={presentationOpen}
         onClose={() => setPresentationOpen(false)}
-        nodes={nodes}
+        nodes={filteredNodes}
         analytics={analytics}
         wranglingLog={wranglingLog}
         stages={stages}
